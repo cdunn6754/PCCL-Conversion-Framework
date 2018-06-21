@@ -32,7 +32,7 @@ stime = sf["time"]
 tar_sec_mf = ch.getTarMassFractionFunctions(sf,stime)
 
 # We need the primary fraction too, not daf yielded but
-# fraction aroudn particle. This way we use all primary data
+# fraction around particle. This way we use all primary data
 # so the Tar has not decomposed. I think that is right as 
 # this is being used to form the source term S_p
 tar_prim_mf = ch.getTarMassFractionFunctions(pf,ptime)
@@ -48,7 +48,7 @@ S_p = cr.calcTimeDerivative(tar_prim_mf, ptime)
 mass_fractions_all = ch.getMassFractionFunctions(sf,stime)
 density_function = ch.getDensity(mass_fractions_all, sTemp, stime)
 
-# Rate constants from Josehpson 2016/ Brown 1998
+# Rate constants from Josehpson 2016/Brown 1998
 A_sf = 5.02e8
 E_sf = 198.9
 A_cr = 9.77e10
@@ -62,10 +62,12 @@ rate_cr = ch.formRateFunction(tar_sec_mf, stime,
                               sTemp, density_function,
                               A_cr, E_cr)
 
-# plt.plot(ptime, S_p(ptime), "-", stime, rate_sf(stime), '.',
-#          stime, rate_cr(stime), '--')
+plt.plot(ptime, S_p(ptime), "-", stime, rate_sf(stime), '.',
+         stime, rate_cr(stime), '--')
+
 # plt.plot(ptime, tar_prim_mf(ptime)/max(tar_prim_mf(ptime)), '-',
 #          ptime, S_p(ptime)/max(S_p(ptime)), '--')
+plt.show()
 
 # Now we can form the total tar rate dY_t/dt function
 tar_rate = lambda t: S_p(t) - rate_sf(t) - rate_cr(t)

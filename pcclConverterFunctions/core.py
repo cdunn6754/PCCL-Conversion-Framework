@@ -43,6 +43,11 @@ def readCSV():
     pccl_primary_df["T"] += 273.15
     pccl_secondary_df["T"] += 273.15
 
+    # Add a nitrogen column, assume the fraction is always 2.0 of the 
+    # particel daf initial mass
+    pccl_primary_df = pccl_primary_df.assign(N2 = [2.0] * len(pccl_primary_df["T"]))
+    pccl_secondary_df = pccl_secondary_df.assign(N2 = [2.0] * len(pccl_secondary_df["T"]))
+
     return ((pccl_primary_df, pccl_secondary_df))
 
 def functionsFromTimeSeriesDf(df):
