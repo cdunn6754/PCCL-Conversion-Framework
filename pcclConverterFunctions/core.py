@@ -7,7 +7,6 @@ import scipy.misc as scpmsc
 
 """
 
-
 # Function to clean the "0.1" and spaces from the column names
 def cleanColumns(name):
     if name[-1] == "1":
@@ -25,15 +24,18 @@ def increaseResolution(data):
 
 def readCSV():
 
+    pfile = 'PCCL_inputs/Utah_Hiawatha/primary.csv'
+    sfile = 'PCCL_inputs/Utah_Hiawatha/secondary.csv'
+
     ## Read primary volatiles
-    pccl_primary_df = pd.read_csv("primary.csv", header=1, sep=",",
+    pccl_primary_df = pd.read_csv(pfile, header=1, sep=",",
                                   skipinitialspace=True)
     pccl_primary_df.rename(columns = cleanColumns, inplace=True)
     pccl_primary_df.rename(columns = {"time s":"time", "Tmp C":"T"}, 
                            inplace=True)
 
     ## Read secondary volatiles/tar products
-    pccl_secondary_df = pd.read_csv("secondary.csv", header=1, sep=",",
+    pccl_secondary_df = pd.read_csv(sfile, header=1, sep=",",
                                     skipinitialspace=True)
     pccl_secondary_df.rename(columns = cleanColumns, inplace=True)
     pccl_secondary_df.rename(columns = {"time s":"time", "Tmp C":"T"}, 
@@ -43,10 +45,10 @@ def readCSV():
     pccl_primary_df["T"] += 273.15
     pccl_secondary_df["T"] += 273.15
 
-    # Add a nitrogen column, assume the fraction is always 2.0 of the 
+    # Add a nitrogen column, assume the fraction is some fraction of the 
     # particel daf initial mass
-    pccl_primary_df = pccl_primary_df.assign(N2 = [2.0] * len(pccl_primary_df["T"]))
-    pccl_secondary_df = pccl_secondary_df.assign(N2 = [2.0] * len(pccl_secondary_df["T"]))
+    pccl_primary_df = pccl_primary_df.assign(N2 = [50.0] * len(pccl_primary_df["T"]))
+    pccl_secondary_df = pccl_secondary_df.assign(N2 = [50.0] * len(pccl_secondary_df["T"]))
 
     return ((pccl_primary_df, pccl_secondary_df))
 
@@ -85,10 +87,28 @@ def getDataFunctions():
     # Read CSVS
     (primary_df,secondary_df) = readCSV()
 
+    # Add the secondary weight loss to secondary_df
+    # it can be used later to determine soot yield 
+    # when compared with the total primary weight loss.
+    sd = secondary_df
+    species_secondary = ['Tar', 'CO2', 'H2O', 'CO', 'HCN', 'CH4', 'C2H4', 
+                      'C2H6', 'C3H6', 'C3H8', 'H2', 'H2S', 'Oils']
+
+    sd["No Soot Weight Loss"] = pd.Series([0.0]* len(sd["Tar"]))
+    for species in species_secondary:
+        sd["No Soot Weight Loss"] += sd[species]
+
     primary_functions = functionsFromTimeSeriesDf(primary_df)
     secondary_functions = functionsFromTimeSeriesDf(secondary_df)
 
-    return (primary_functions,secondary_functions)
+    # Wait until now to calculate soot because the primary and
+    # secondary time series are different. Once they are functions
+    # they are easier to work with.
+
+    secondary_functions["Soot"] = lambda t: (primary_functions["Wt Loss"](t) - 
+        secondary_functions["No Soot Weight Loss"](t))
+
+    return (primary_functions, secondary_functions)
 
 
 def calcTimeDerivative(function, times, dx=1e-6):

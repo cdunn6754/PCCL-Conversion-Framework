@@ -13,6 +13,9 @@ For now the species considered, whether they are primary or secondary,
 are hard-coded. 
 """
 
+species_considered = ['Tar', 'CO2', 'H2O', 'CO', 'HCN', 'CH4', 'C2H4', 'Soot',
+                      'C2H6', 'C3H6', 'C3H8', 'H2', 'H2S', 'Oils', 'N2']
+
 def getTarMassFractionFunctions(functions, times):
     """
      The functions are yield daf we need to convert to 
@@ -24,9 +27,6 @@ def getTarMassFractionFunctions(functions, times):
 
     # list of sums to be used for renormalization
     sum_list = np.zeros(len(times))
-    
-    species_considered = ['Tar', 'CO2', 'H2O', 'CO', 'HCN', 'CH4', 'C2H4', 
-                          'C2H6', 'C3H6', 'C3H8', 'H2', 'H2S', 'Oils', 'N2']
 
     name_set = set(species_considered).intersection(functions.keys())
 
@@ -54,9 +54,6 @@ def getMassFractionFunctions(functions, times):
 
     # list of sums to be used for renormalization
     sum_list = np.zeros(len(times))
-    
-    species_considered = ['Tar', 'CO2', 'H2O', 'CO', 'HCN', 'CH4', 'C2H4', 
-                          'C2H6', 'C3H6', 'C3H8', 'H2', 'H2S', 'Oils']
 
     name_set = set(species_considered).intersection(functions.keys())
 
@@ -92,8 +89,6 @@ def getMassFractionDictAtTime(mfs, time):
     mf_dict = {}
     
     for name in mfs.keys():
-        # if (name == "C3H6" or name == "H2S" or name == "Oils" or name == "Tar"):
-        #     continu
         mf_dict[name] = mfs[name](time)
 
     return mf_dict
@@ -166,4 +161,39 @@ def formRateFunction(tar_sec, stime, stemp, A, E):
     rate_list = np.round(tar_list * A * np.exp(-E / (R * temp_list)),15)
 
     return intrp.interp1d(stime, rate_list, kind="cubic")
-        
+
+def formRateAtTime(tar_sec, temp, A, E):
+    """
+    Instead of calculating the rates from the pccl known secondary tar
+    mass fraction for the entire time series as in formTarFunction(), here
+    we just give scalar values for the current secondary tar mass fraction and
+    temperature. Along with the rate constants we use that info to calculate
+    the rates and then return it, again a single scalar value.
+    """
+    R = 8.315e-3 #kJ/[mol K]
+ 
+    return tar_sec * A * np.exp(-E / (R * temp))
+
+def formSecondaryTarRate(star_mf, primSource, T):
+    """
+    Form the dY_st/dt rate from the primary tar source,
+    with soot formation and tar cracking sink terms.
+    dY_st/dt = dY_p/dt - r_sf - r_cr
+    
+    - star_mf is the scalar secondary tar mass fraction
+    - prim_source is the current value of dY_p/dt
+    - T is the current temperature
+    """
+
+    # Rate constants from Josehpson 2016/Brown 1998
+    A_sf = 5.02e8
+    E_sf = 198.9
+    A_cr = 9.77e10
+    E_cr = 286.9
+
+    # soot formation rate
+    r_sf = formRateAtTime(star_mf, T, A_sf, E_sf)
+    # cracking
+    r_cr = formRateAtTime(star_mf, T, A_cr, E_cr)
+
+    return primSource - r_sf - r_cr
