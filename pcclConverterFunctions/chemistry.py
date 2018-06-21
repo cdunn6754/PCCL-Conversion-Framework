@@ -147,7 +147,7 @@ def getDensity(mfs, temperature, times):
     
     return density_function
 
-def formRateFunction(tar_sec, stime, stemp, sdensity, A, E):
+def formRateFunction(tar_sec, stime, stemp, A, E):
     """
     Given the secondary tar mass fraction function, secondary time function,
     secondary temperature function, density function and 
@@ -162,9 +162,8 @@ def formRateFunction(tar_sec, stime, stemp, sdensity, A, E):
         
     tar_list = tar_sec(stime)
     temp_list = stemp(stime)
-    density_list = sdensity(stime)
 
-    rate_list = np.round(tar_list * A * np.exp(-E / (R * temp_list))/ density_list,15)
+    rate_list = np.round(tar_list * A * np.exp(-E / (R * temp_list)),15)
 
     return intrp.interp1d(stime, rate_list, kind="cubic")
         

@@ -55,11 +55,11 @@ A_cr = 9.77e10
 E_cr = 286.9
 
 rate_sf = ch.formRateFunction(tar_sec_mf, stime, 
-                              sTemp, density_function,
+                              sTemp,
                               A_sf, E_sf)
 
 rate_cr = ch.formRateFunction(tar_sec_mf, stime, 
-                              sTemp, density_function,
+                              sTemp,
                               A_cr, E_cr)
 
 plt.plot(ptime, S_p(ptime), "-", stime, rate_sf(stime), '.',
