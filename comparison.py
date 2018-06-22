@@ -31,8 +31,6 @@ stime = sf["time"]
 # will be used to form cracking and soot formation rates from Brown
 tar_sec_mf = ch.getTarMassFractionFunctions(sf,stime)
 
-# DEBUG
-print("Tar secondary fraction: {} ".format(tar_sec_mf(0.9e-2)))
 # We need the primary fraction too, not daf yielded but
 # fraction around particle. This way we use all primary data
 # so the Tar has not decomposed. I think that is right as 
@@ -56,28 +54,28 @@ E_sf = 198.9
 A_cr = 9.77e10
 E_cr = 286.9
 
-rate_sf = ch.formRateFunction(tar_sec_mf, stime, 
-                              sTemp,
-                              A_sf, E_sf)
+# rate_sf = ch.formRateFunction(tar_sec_mf, stime, 
+#                               sTemp,
+#                               A_sf, E_sf)
 
-rate_cr = ch.formRateFunction(tar_sec_mf, stime, 
-                              sTemp,
-                              A_cr, E_cr)
+# rate_cr = ch.formRateFunction(tar_sec_mf, stime, 
+#                               sTemp,
+#                               A_cr, E_cr)
 
 
-plt.figure(1)
-plt.plot(ptime, S_p(ptime), "-", label="Primary")
-plt.plot(stime, rate_sf(stime), '.', label="Soot Formation")        
-plt.plot(stime, rate_cr(stime), '--', label="Cracking")
-plt.legend()
+# plt.figure(1)
+# plt.plot(ptime, S_p(ptime), "-", label="Primary")
+# plt.plot(stime, rate_sf(stime), '.', label="Soot Formation")        
+# plt.plot(stime, rate_cr(stime), '--', label="Cracking")
+# plt.legend()
 
 # plt.plot(ptime, tar_prim_mf(ptime)/max(tar_prim_mf(ptime)), '-',
 #          ptime, S_p(ptime)/max(S_p(ptime)), '--')
 
 
 # Now we can form the total tar rate dY_t/dt function
-def tar_rate(y,t): 
-    return S_p(t) - rate_sf(t) - rate_cr(t)
+# def tar_rate(y,t): 
+#     return S_p(t) - rate_sf(t) - rate_cr(t)
 
 #result = intgrt.quad(tar_rate, 0.0, 0.0211)
 
@@ -96,34 +94,51 @@ int_time = np.arange(1e-6, stime[-1], 1e-6)
 star_mf = np.zeros(len(int_time))
 star_mf[0] = tar_sec_mf(0.0)
 
+# Soot formed from tar decomposition
+soot_mf = np.zeros(len(int_time))
+
+# Other volatiles/gases from tar cracking/gasification
+gas_mf = np.zeros(len(int_time))
+
+
 # Secondary tar formation at time 0.0
-prev_rate = ch.formSecondaryTarRate(star_mf[0], S_p(0.0), sTemp(0.0))
+total_rate = ch.formSecondaryTarRate(star_mf[0], S_p(0.0), sTemp(0.0))
+soot_rate = ch.formRateAtTemp(star_mf[0], sTemp(0.0), A_sf, E_sf)
+gas_rate = ch.formRateAtTemp(star_mf[0], sTemp(0.0), A_cr, E_cr)
 
 for (time_idx,time) in enumerate(int_time[:-1]):
     """
     iterate through time steps excluding the first.
     Use a forward rule to 
-    integrate as phi(t + 1) = phi(t) + dt * phi'(t - 1)
-    - prev_rate is phi'(t-1)
+    integrate as phi(t + 1) = phi(t) + dt * phi'(t)
+    - total_rate is phi'(t-1)
     - curr_rate is phi'(t)
     """
-    dt = time - int_time[time_idx - 1]
+    dt = int_time[time_idx + 1] - time
     
-    star_mf[time_idx + 1] = star_mf[time_idx] + dt * prev_rate
+    star_mf[time_idx + 1] = star_mf[time_idx] + dt * total_rate
+    soot_mf[time_idx + 1] = soot_mf[time_idx] + dt * soot_rate
+    gas_mf[time_idx + 1] = gas_mf[time_idx] + dt * gas_rate
 
-    prev_rate = ch.formSecondaryTarRate(star_mf[time_idx + 1], S_p(time), sTemp(time))
+    total_rate = ch.formSecondaryTarRate(star_mf[time_idx + 1], 
+                                         S_p(time + dt), 
+                                         sTemp(time + dt))
+    soot_rate = ch.formRateAtTemp(star_mf[time_idx + 1],
+                                  sTemp(time + dt),
+                                  A_sf, E_sf)
+    gas_rate = ch.formRateAtTemp(star_mf[time_idx + 1],
+                                  sTemp(time + dt),
+                                  A_cr, E_cr)
 
 
-
-## Old way
-sol_old = intgrt.odeint(tar_rate, [tar_sec_mf(0.0)], int_time[:-500])
 
 plt.figure(2)
-plt.plot(int_time[:-500], sol_old, '-.', label="Old Way")
-plt.plot(int_time, star_mf, '-', label="conversion")
+plt.plot(int_time, star_mf, '-', label="TT secondary")
+plt.plot(int_time, soot_mf, '-.', label="TT soot")
+plt.plot(int_time, gas_mf, '-.', label="TT gas")
 plt.plot(stime, tar_sec_mf(stime),'--', label="PCCL secondary")
 plt.plot(stime, tar_prim_mf(stime),'--', label="PCCL primary")
-plt.plot(stime, mass_fractions_all["Soot"](stime), ':', label="Soot")
+plt.plot(stime, mass_fractions_all["Soot"](stime), ':', label="PCCL Soot")
 plt.legend()
 plt.show()
     

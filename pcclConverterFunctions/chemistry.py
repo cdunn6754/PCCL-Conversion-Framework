@@ -162,7 +162,7 @@ def formRateFunction(tar_sec, stime, stemp, A, E):
 
     return intrp.interp1d(stime, rate_list, kind="cubic")
 
-def formRateAtTime(tar_sec, temp, A, E):
+def formRateAtTemp(tar_sec, temp, A, E):
     """
     Instead of calculating the rates from the pccl known secondary tar
     mass fraction for the entire time series as in formTarFunction(), here
@@ -192,8 +192,8 @@ def formSecondaryTarRate(star_mf, primSource, T):
     E_cr = 286.9
 
     # soot formation rate
-    r_sf = formRateAtTime(star_mf, T, A_sf, E_sf)
+    r_sf = formRateAtTemp(star_mf, T, A_sf, E_sf)
     # cracking
-    r_cr = formRateAtTime(star_mf, T, A_cr, E_cr)
+    r_cr = formRateAtTemp(star_mf, T, A_cr, E_cr)
 
     return primSource - r_sf - r_cr
