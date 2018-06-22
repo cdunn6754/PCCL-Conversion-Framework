@@ -7,11 +7,14 @@ import  pcclConverterFunctions.core as cr
 import  pcclConverterFunctions.chemistry as ch
 
 """
-dY_ts/dt = S_p - S_sootform - S_cracking
+dY_ts/dt = S_primary - S_sootform - S_cracking
 
- S_p - The source of primary tar, i.e. the rate of primary tar creation dY_tp/dt
- S_sf - Soot formation rate
+ S_primary - The source of primary tar, i.e. the rate of primary tar creation dY_tp/dt
+ S_sf - Soot formation rate.
+ S_cr - Cracking or gasification of tar, rate.
 
+TOD: should make a comparison class that could be instantiated for a particular 
+species. It would hold the PCCL results and perform the TT model integration too.
 """
 
 # get the data function dictionaries
@@ -29,24 +32,22 @@ stime = sf["time"]
 # get the interpolated time series function of tar mf
 # that is within the enviroment surrounding the particle
 # will be used to form cracking and soot formation rates from Brown
-tar_sec_mf = ch.getTarMassFractionFunctions(sf,stime)
+star_mf_function = ch.getTarMassFractionFunctions(sf,stime)
 
 # We need the primary fraction too, not daf yielded but
 # fraction around particle. This way we use all primary data
 # so the Tar has not decomposed. I think that is right as 
-# this is being used to form the source term S_p
-tar_prim_mf = ch.getTarMassFractionFunctions(pf,ptime)
+# this is being used to form the primary tar source term.
+ptar_mf_function = ch.getTarMassFractionFunctions(pf,ptime)
 
 ## Now we are in a position to integrate the dY_t/dt equation
 
-#First get the primary source derivative interpolated function
-S_p = cr.calcTimeDerivative(tar_prim_mf, ptime)
-
-
+# First get the primary source derivative interpolated function
+# This is the derivative of the primary tar mass fraction in time.
+pSource_function = cr.calcTimeDerivative(ptar_mf_function, ptime)
 
 # Calculate the soot formation and cracking rates in units [1/s] (Y_t/s)
-mass_fractions_all = ch.getMassFractionFunctions(sf,stime)
-#density_function = ch.getDensity(mass_fractions_all, sTemp, stime)
+s_all_mf_functions = ch.getMassFractionFunctions(sf,stime)
 
 # Rate constants from Josehpson 2016/Brown 1998
 A_sf = 5.02e8
@@ -54,95 +55,63 @@ E_sf = 198.9
 A_cr = 9.77e10
 E_cr = 286.9
 
-# rate_sf = ch.formRateFunction(tar_sec_mf, stime, 
-#                               sTemp,
-#                               A_sf, E_sf)
-
-# rate_cr = ch.formRateFunction(tar_sec_mf, stime, 
-#                               sTemp,
-#                               A_cr, E_cr)
-
-
-# plt.figure(1)
-# plt.plot(ptime, S_p(ptime), "-", label="Primary")
-# plt.plot(stime, rate_sf(stime), '.', label="Soot Formation")        
-# plt.plot(stime, rate_cr(stime), '--', label="Cracking")
-# plt.legend()
-
-# plt.plot(ptime, tar_prim_mf(ptime)/max(tar_prim_mf(ptime)), '-',
-#          ptime, S_p(ptime)/max(S_p(ptime)), '--')
-
-
-# Now we can form the total tar rate dY_t/dt function
-# def tar_rate(y,t): 
-#     return S_p(t) - rate_sf(t) - rate_cr(t)
-
-#result = intgrt.quad(tar_rate, 0.0, 0.0211)
-
-
-## Now do it for real, in the previous integration we used the
-# predetermined PCCL secondary tar mass fraction to calculate the rates.
-# In reality we dont have that information and are integrating the equation to 
-# determine it. So now we will do that. We integrate the rates and then
-# need to recalculate the mass fraction of secondary tar each time.
-
-
 # integration time list, we will use a little higher definition here than PCCL
 int_time = np.arange(1e-6, stime[-1], 1e-6)
 
-# initial secondary tar mass fraction
-star_mf = np.zeros(len(int_time))
-star_mf[0] = tar_sec_mf(0.0)
+## Form derivative function to hand to scipy integrator for
+#  dY_st/dt, the secondary tar overall rate.
+def star_rate(star_mf, t):
+    T = sTemp(t)
+    Sp = pSource_function(t)
+    return ch.formSecondaryTarRate(star_mf, Sp, T)
 
-# Soot formed from tar decomposition
-soot_mf = np.zeros(len(int_time))
+# Same for soot formation
+# dY_s/dt
+def soot_rate(_, t):
+    T = sTemp(t)
+    star_mf = star_mf_function(t)
+    return ch.formRateAtTemp(star_mf, T, A_sf, E_sf)
 
-# Other volatiles/gases from tar cracking/gasification
-gas_mf = np.zeros(len(int_time))
+# Same for tar cracking gas formation
+# dY_g/dt
+def gas_rate(_, t):
+    T = sTemp(t)
+    star_mf = star_mf_function(t)
+    return ch.formRateAtTemp(star_mf, T, A_cr, E_cr)
 
+# Integrate with scipy
+star_mf = intgrt.odeint(star_rate, [star_mf_function(0.0)], int_time)
+soot_mf = intgrt.odeint(soot_rate, [0.0], int_time)
+gas_mf = intgrt.odeint(gas_rate, [0.0], int_time)
 
-# Secondary tar formation at time 0.0
-total_rate = ch.formSecondaryTarRate(star_mf[0], S_p(0.0), sTemp(0.0))
-soot_rate = ch.formRateAtTemp(star_mf[0], sTemp(0.0), A_sf, E_sf)
-gas_rate = ch.formRateAtTemp(star_mf[0], sTemp(0.0), A_cr, E_cr)
-
-for (time_idx,time) in enumerate(int_time[:-1]):
-    """
-    iterate through time steps excluding the first.
-    Use a forward rule to 
-    integrate as phi(t + 1) = phi(t) + dt * phi'(t)
-    - total_rate is phi'(t-1)
-    - curr_rate is phi'(t)
-    """
-    dt = int_time[time_idx + 1] - time
-    
-    star_mf[time_idx + 1] = star_mf[time_idx] + dt * total_rate
-    soot_mf[time_idx + 1] = soot_mf[time_idx] + dt * soot_rate
-    gas_mf[time_idx + 1] = gas_mf[time_idx] + dt * gas_rate
-
-    total_rate = ch.formSecondaryTarRate(star_mf[time_idx + 1], 
-                                         S_p(time + dt), 
-                                         sTemp(time + dt))
-    soot_rate = ch.formRateAtTemp(star_mf[time_idx + 1],
-                                  sTemp(time + dt),
-                                  A_sf, E_sf)
-    gas_rate = ch.formRateAtTemp(star_mf[time_idx + 1],
-                                  sTemp(time + dt),
-                                  A_cr, E_cr)
-
-
-
-plt.figure(2)
+# plots to compare PCCL and TT model outputs
+plt.figure(3)
 plt.plot(int_time, star_mf, '-', label="TT secondary")
 plt.plot(int_time, soot_mf, '-.', label="TT soot")
 plt.plot(int_time, gas_mf, '-.', label="TT gas")
-plt.plot(stime, tar_sec_mf(stime),'--', label="PCCL secondary")
-plt.plot(stime, tar_prim_mf(stime),'--', label="PCCL primary")
-plt.plot(stime, mass_fractions_all["Soot"](stime), ':', label="PCCL Soot")
+plt.plot(stime, star_mf_function(stime),'--', label="PCCL secondary")
+plt.plot(stime, ptar_mf_function(stime),'--', label="PCCL primary")
+plt.plot(stime, s_all_mf_functions["Soot"](stime), ':', label="PCCL Soot")
 plt.legend()
-plt.show()
-    
 
+
+plt.show()
 exit()
 
 
+# class comparisonSpeciesBase:
+#     """
+#     Base class to hold a species comparison between PCCL and TT model.
+#     """
+
+#     def __init__(self, species_name, sf_rate_constants, cr_rate_constants):
+#         self.name = species_name
+
+#         self.Asf = sf_rate_constants[0]
+#         self.Esf = sf_rate_constants[1]
+
+#         self.Acr = cr_rate_constants[0]
+#         self.Ecr = cr_rate_constants[1]
+
+#         # get the data function dictionaries
+#         (pf,sf) = cr.getDataFunctions()

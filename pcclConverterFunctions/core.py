@@ -3,10 +3,60 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.interpolate as intrp
 import scipy.misc as scpmsc
+import warnings
 """
 
 """
 
+# class interpolation():
+#     """
+#     The scipy interpolation callable objects work great but throw an 
+#     error when you call them outside of the time range. Sometimes 
+#     the scipy integrators need to make a call just slightly outside.
+#     This is a wrapper function that performs a constant extrapolation
+#     in the case that the argument is outside of the interpolation range
+#     """
+    
+#     def __init__(self, time_list, data_list, kind="cubic"):
+        
+#         self.orig_interpolation = intrp.interp1d(time_list,
+#                                                  data_list,
+#                                                  kind=kind)
+
+#         self.top_limit = time_list[-1]
+#         self.bottom_limit = time_list[0]
+
+#     def __call__(self, t):
+        
+#         try:
+#             # first try to use the interpolation
+#             result = self.orig_interpolation(t)
+#             return result
+
+#         # If it didnt work do the constant extrapolation
+#         except ValueError as err:
+#             emessage = err.args[0]
+#             # if its above the interpolated range
+#             if emessage == "A value in x_new is above the interpolation range.":
+
+#                 warning_string = ("Value {} above the interpolation ".format(t) + 
+#                                   "range limit of {}".format(self.top_limit))
+#                 warnings.warn(warning_string)
+                
+#                 print(self.top_limit)
+#                 result = self.orig_interpolation(self.top_limit)
+#                 return result
+                        
+
+#             elif emessage == "A value in x_new is below the interpolation range.":
+                
+#                 warning_string = ("Value {} below the interpolation ".format(t) + 
+#                                   "range limit of {}".format(self.bottom_limit))
+#                 warnings.warn(warning_string)
+
+#                 result = self.orig_interpolation(self.bottom_limit)
+#                 return result
+        
 # Function to clean the "0.1" and spaces from the column names
 def cleanColumns(name):
     if name[-1] == "1":
@@ -68,8 +118,10 @@ def functionsFromTimeSeriesDf(df):
     # Calculate functions
     for column in df.columns.values:
         functions[column] = intrp.interp1d(time,
-                                            df[column].tolist(),
-                                            kind="cubic")
+                                           df[column].tolist(),
+                                           kind="cubic",
+                                           bounds_error=False,
+                                           fill_value="extrapolate")
 
     # Need time to be a list not a function
     functions["time"] = time
@@ -162,7 +214,9 @@ def calcTimeDerivative(function, times, dx=1e-6):
     ## Now perform interpolation on the derivative list
     deriv_function = intrp.interp1d(times,
                                     deriv_list,
-                                    kind="cubic")
+                                    kind="cubic",
+                                    bounds_error=False,
+                                    fill_value="extrapolate")
                 
     return deriv_function
 

@@ -41,7 +41,9 @@ def getTarMassFractionFunctions(functions, times):
     
     tar_mf_function = intrp.interp1d(times,
                                      tar_mf_list,
-                                     kind="cubic")
+                                     kind="cubic",
+                                     bounds_error=False,
+                                     fill_value="extrapolate")
 
     return tar_mf_function
 
@@ -75,7 +77,11 @@ def getMassFractionFunctions(functions, times):
         mf_list = yield_list/(sum_list + 1e-15)
     
         # then reinterpolate list to form a function
-        mf_dict[name] = intrp.interp1d(times, mf_list, kind="cubic")
+        mf_dict[name] = intrp.interp1d(times,
+                                       mf_list,
+                                       kind="cubic",
+                                       bounds_error=False,
+                                       fill_value="extrapolate")
 
     return mf_dict
 
@@ -138,10 +144,18 @@ def getDensity(mfs, temperature, times):
         else:
             density_list[time_idx] = -1.0
 
-    density_function = intrp.interp1d(times, density_list, kind="cubic")
+    density_function = intrp.interp1d(times,
+                                      density_list,
+                                      kind="cubic",
+                                      bounds_error=False,
+                                      fill_value="extrapolate")
     
     return density_function
 
+    ### DEPRECATED: This function relies on apriori knowledge of the 
+    #   star mass fraction. It was taken from PCCL to run this function
+    #   but it doesn't make sense to do it that way. It should be 
+    #   calculated from the integration of the TT rates.
 def formRateFunction(tar_sec, stime, stemp, A, E):
     """
     Given the secondary tar mass fraction function, secondary time function,
@@ -160,7 +174,11 @@ def formRateFunction(tar_sec, stime, stemp, A, E):
 
     rate_list = np.round(tar_list * A * np.exp(-E / (R * temp_list)),15)
 
-    return intrp.interp1d(stime, rate_list, kind="cubic")
+    return intrp.interp1d(stime,
+                          rate_list,
+                          kind="cubic",
+                          bounds_error=False,
+                          fill_value="extrapolate")
 
 def formRateAtTemp(tar_sec, temp, A, E):
     """
@@ -170,7 +188,7 @@ def formRateAtTemp(tar_sec, temp, A, E):
     temperature. Along with the rate constants we use that info to calculate
     the rates and then return it, again a single scalar value.
     """
-    R = 8.315e-3 #kJ/[mol K]
+    R = 8.315e-3 #kJ/[mol K] as in Brown 1998
  
     return tar_sec * A * np.exp(-E / (R * temp))
 
@@ -180,9 +198,12 @@ def formSecondaryTarRate(star_mf, primSource, T):
     with soot formation and tar cracking sink terms.
     dY_st/dt = dY_p/dt - r_sf - r_cr
     
+    All arguments are single scalar values
     - star_mf is the scalar secondary tar mass fraction
     - prim_source is the current value of dY_p/dt
     - T is the current temperature
+
+    Returns scalar value for rate
     """
 
     # Rate constants from Josehpson 2016/Brown 1998
