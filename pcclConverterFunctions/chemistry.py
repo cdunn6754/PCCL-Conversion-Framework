@@ -192,7 +192,7 @@ def formRateAtTemp(tar_sec, temp, A, E):
  
     return tar_sec * A * np.exp(-E / (R * temp))
 
-def formSecondaryTarRate(star_mf, primSource, T):
+def formSecondaryTarRate(star_mf, primSource, T, rate_constants):
     """
     Form the dY_st/dt rate from the primary tar source,
     with soot formation and tar cracking sink terms.
@@ -202,15 +202,17 @@ def formSecondaryTarRate(star_mf, primSource, T):
     - star_mf is the scalar secondary tar mass fraction
     - prim_source is the current value of dY_p/dt
     - T is the current temperature
+    - rates is a 4-tuple of (A_sf, E_sf, A_cr, E_cr)
 
     Returns scalar value for rate
     """
 
     # Rate constants from Josehpson 2016/Brown 1998
-    A_sf = 5.02e8
-    E_sf = 198.9
-    A_cr = 9.77e10
-    E_cr = 286.9
+    # or from the optimizer
+    A_sf = rate_constants[0]
+    E_sf = rate_constants[1]
+    A_cr = rate_constants[2]
+    E_cr = rate_constants[3]
 
     # soot formation rate
     r_sf = formRateAtTemp(star_mf, T, A_sf, E_sf)
