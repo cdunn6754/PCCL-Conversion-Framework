@@ -61,10 +61,11 @@ class StarObjective:
         int_results = self.c.integrateRates(rate_constants_)
         int_time = int_results[3]
 
-        pccl_star_list = list(self.c.star_mf_function(int_time))
+        pccl_star_list = list(self.c.pc_star_mf_function(int_time))
         tt_star_list = list(int_results[0])
 
-        cost = integrateDiff(pccl_star_list, tt_star_list)
+        #cost = integrateDiff(pccl_star_list, tt_star_list)
+        cost = getSumSquares(pccl_star_list, tt_star_list)
 
         print("New constants: {}, {}".format(cracking_rate_constants[0],
                                             cracking_rate_constants[1]))
@@ -87,27 +88,47 @@ soot_rate_constants = rate_constants[0:2]
 c = cpn.SpeciesComparison()
 
 
-#soot_obj = SootObjective(cracking_rate_constants, c)
+# soot_obj = SootObjective(cracking_rate_constants, c)
+# min_result = opt.minimize(soot_obj, soot_rate_constants, method='Nelder-Mead',
+#                           options={'fatol':1e-3})
+# exit()
 
-#min_result = opt.minimize(soot_obj, soot_rate_constants, method='Nelder-Mead')
 
 # New soot constants
-rate_constants = (442849227.6806, 189.8089195, A_cr, E_cr)
+# rate_constants = (2.33e7, 154.7, A_cr, E_cr)
+# star_obj = StarObjective(rate_constants, c)
+# min_result = opt.minimize(star_obj, soot_rate_constants, method='Nelder-Mead',
+#                           options={'fatol':1e-3})
+# exit()
 
-star_obj = StarObjective(rate_constants, c)
-
-#min_result = opt.minimize(star_obj, soot_rate_constants, method='Nelder-Mead')
-#exit()
-
-rate_constants = (442849227.6806, 189.8089195,87.989, 11.71925)
+rate_constants = (2.33e7, 154.7, 1988.4, 47.31)
 results = c.integrateRates(rate_constants)
 
 int_time = results[3]
 
-plt.plot(int_time, results[0], '-', label="TT Secondary Tar")
+
+pccl_svol_mf = (c.pc_ptar_mf_function(c.stime) - 
+                c.pc_star_mf_function(c.stime) - 
+                c.s_all_mf_functions["Soot"](c.stime))
+
+plt.plot(int_time, results[0], '--', label="TT Secondary Tar")
 plt.plot(int_time, results[1], '-.', label="TT Soot")
 plt.plot(int_time, results[2], ':', label="TT Gas")
-plt.plot(c.stime, c.star_mf_function(c.stime), '--', label="PCCL Secondary Tar")
-plt.plot(c.stime, c.s_all_mf_functions["Soot"](c.stime), '-', label="PCCL Soot")
+plt.plot(c.stime, c.pc_ptar_mf_function(c.stime), '-', label="PCCL Primary Tar")
+plt.plot(c.stime, c.pc_star_mf_function(c.stime), '--', label="PCCL Secondary Tar")
+plt.plot(c.stime, c.s_all_mf_functions["Soot"](c.stime), '-.', label="PCCL Soot")
+plt.plot(c.stime, pccl_svol_mf , ':', label="PCCL secondary volatile Gas")
+plt.legend()
+plt.title("Rates optimized to fit PCCL predictions")
+
+
+
+plt.figure(5)
+temps = np.arange(273,1900, 0.1)
+rate = lambda T,A,E: A * np.exp(-E/(0.008314 * T))
+plt.plot(temps, rate(temps,rate_constants[0], rate_constants[1]), label="soot")
+plt.plot(temps, rate(temps,rate_constants[2],rate_constants[3]), label="cracking")
 plt.legend()
 plt.show()
+
+

@@ -74,8 +74,8 @@ def increaseResolution(data):
 
 def readCSV():
 
-    pfile = 'PCCL_inputs/Utah_Hiawatha/primary.csv'
-    sfile = 'PCCL_inputs/Utah_Hiawatha/secondary.csv'
+    pfile = 'PCCL_inputs/UtahHiawathaMild/primary.csv'
+    sfile = 'PCCL_inputs/UtahHiawathaMild/secondary.csv'
 
     ## Read primary volatiles
     pccl_primary_df = pd.read_csv(pfile, header=1, sep=",",
@@ -128,6 +128,35 @@ def functionsFromTimeSeriesDf(df):
 
     return functions
 
+def functionFromArray(time, data, new_time=None):
+    """
+    Takes an np array of data and time (same length). Performs a cubic interpolation
+    and returns the callable interpolation object.
+    
+    If new_time is provided the function is first formed for the original `time' 
+    then it a new interpolation object is formed with the new_time as a base. 
+    This is useful if the original time array is too detailed.
+    """
+
+    data = np.array(data).flatten()
+    time = np.array(time).flatten()
+
+    function = intrp.interp1d(time,
+                              data,
+                              kind="cubic",
+                              bounds_error=False,
+                              fill_value="extrapolate")
+    
+    if new_time:
+        new_time = np.array(time).flatten()
+        
+        function = intrp.interp1d(new_time,
+                                  function(new_time),
+                                  kind="cubic",
+                                  bounds_error=False,
+                                  fill_value="extrapolate")
+        
+    return function
 
 def getDataFunctions():
     """ 
