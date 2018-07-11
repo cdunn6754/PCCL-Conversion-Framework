@@ -74,8 +74,8 @@ def increaseResolution(data):
 
 def readCSV():
 
-    pfile = 'PCCL_inputs/UtahHiawathaMild/primary.csv'
-    sfile = 'PCCL_inputs/UtahHiawathaMild/secondary.csv'
+    pfile = 'PCCL_inputs/UtahHiawatha/primary.csv'
+    sfile = 'PCCL_inputs/UtahHiawatha/secondary.csv'
 
     ## Read primary volatiles
     pccl_primary_df = pd.read_csv(pfile, header=1, sep=",",

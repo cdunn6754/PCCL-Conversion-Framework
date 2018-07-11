@@ -71,9 +71,12 @@ class SpeciesComparison:
                                                         self.tt_star_mf_list)
 
 
-    ## Form derivative function to hand to scipy integrator for
-    #  dY_st/dt, the secondary tar overall rate.
     def star_rate(self, star_mf, t):
+        """
+        Form star derivative function to hand to scipy integrator for
+        dY_st/dt, the secondary tar overall rate. This is the 
+        derivative at a particular time t.
+        """
 
         T = self.sTemp(t)
         Sp = self.p_source_function(t)
@@ -82,21 +85,30 @@ class SpeciesComparison:
                                        T,
                                        self.rate_constants)
 
-    # The mass fraction of soot produced from tar breakdown
     def soot_rate(self, _, t):
+        """
+        The mass fraction of soot produced from tar breakdown.
+        This is the rate at a particular time t which specifies
+        the secondary tar mass fraction and temperature.
+        """
         T = self.sTemp(t)
-        #star_mf = self.pc_star_mf_function(t)
         star_mf = self.tt_star_mf_function(t)
+        # soot formation rate contants
         A = self.rate_constants[0]
         E = self.rate_constants[1]
         return ch.formRateAtTemp(star_mf, T, A, E)
 
-    # The mass fraction of gas that is a product of tar decomposition
-    # but isnt soot
+
     def gas_rate(self, _, t):
+        """
+        The mass fraction of gas that is a product of tar decomposition
+        but isnt soot.
+        This is the rate at a particular time t which specifies
+        the secondary tar mass fraction and temperature.
+        """
         T = self.sTemp(t)
-        #star_mf = self.pc_star_mf_function(t)
         star_mf = self.tt_star_mf_function(t)
+        # cracking rate constants
         A = self.rate_constants[2]
         E = self.rate_constants[3]
         return ch.formRateAtTemp(star_mf, T, A, E)
@@ -106,17 +118,18 @@ class SpeciesComparison:
                        dt = 1e-6):
         """
         Runs the TT model to predict the secondary tar, soot and 
-        tar cracking gas product mass fractions. Can then be compared
-        with the PCCL results.
+        tar cracking gas product mass fractions time series. Whici can then 
+        be compared with the PCCL results.
         
-        rate_constants should be a 4-tuple of (A_sf, E_sf, A_cr, E_cr)
+        rate_constants should be a 4-tuple of (A_sf, E_sf, A_cr, E_cr).
         This will be called during optimization to reintegrate the 
         rate equations with these new constants.
 
-        int_time is the array of times over which to integrate. 
-        The default, set in the function seems to work fine.
+        dt is the time step over which to integrate. 
+        The default, set in the function above, seems to work fine.
         
         Returns: a 4-tuple of arrays (star_mf, soot_mf, gas_mf, int_time)
+         that represent time series
           star_mf - Mass fraction of secondary tar
           soot_mf -       ""         soot
           gas_mf -        ""         gas

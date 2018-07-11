@@ -31,6 +31,7 @@ class SootObjective:
                             self.cracking_rate_constants[0],
                             self.cracking_rate_constants[1])
 
+        #Integrate the TT model
         int_results = self.c.integrateRates(rate_constants_)
         int_time = int_results[3]
 
@@ -58,6 +59,7 @@ class StarObjective:
                             cracking_rate_constants[0],
                             cracking_rate_constants[1])
 
+        #Integrate the TT model
         int_results = self.c.integrateRates(rate_constants_)
         int_time = int_results[3]
 
@@ -65,7 +67,7 @@ class StarObjective:
         tt_star_list = list(int_results[0])
 
         #cost = integrateDiff(pccl_star_list, tt_star_list)
-        cost = getSumSquares(pccl_star_list, tt_star_list)
+        cost = integrateDiff(pccl_star_list, tt_star_list)
 
         print("New constants: {}, {}".format(cracking_rate_constants[0],
                                             cracking_rate_constants[1]))

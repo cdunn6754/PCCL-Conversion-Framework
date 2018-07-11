@@ -23,6 +23,10 @@ def getTarMassFractionFunctions(functions, times):
     surrounding the particle. To do this add up all daf yield 
     fractions of  volatile species including Tar from the
     secondary information and then renormalize the Tar fraction
+
+    Returns the tar mass fraction function for the pccl run 
+    within the idealized 0-D reactor around the particle
+    as a scipy interpolation object.
     """
 
     # list of sums to be used for renormalization
@@ -152,7 +156,7 @@ def getDensity(mfs, temperature, times):
     
     return density_function
 
-    ### DEPRECATED: This function relies on apriori knowledge of the 
+    ### DEPRECATED: This function relies on a priori knowledge of the 
     #   star mass fraction. It was taken from PCCL to run this function
     #   but it doesn't make sense to do it that way. It should be 
     #   calculated from the integration of the TT rates.
@@ -185,8 +189,8 @@ def formRateAtTemp(tar_sec, temp, A, E):
     Instead of calculating the rates from the pccl known secondary tar
     mass fraction for the entire time series as in formTarFunction(), here
     we just give scalar values for the current secondary tar mass fraction and
-    temperature. Along with the rate constants we use that info to calculate
-    the rates and then return it, again a single scalar value.
+    temperature. Along with the rate constants. We then use that info to calculate
+    the rates and then return it, it is a single scalar value.
     """
     R = 8.315e-3 #kJ/[mol K] as in Brown 1998
  
