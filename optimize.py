@@ -38,12 +38,12 @@ class SootObjective:
         pccl_soot_list = list(self.c.s_all_mf_functions["Soot"](int_time))
         tt_soot_list = list(int_results[1])
 
-        cost = integrateDiff(pccl_soot_list, tt_soot_list)
+        cost = getSumSquares(pccl_soot_list, tt_soot_list)
 
-        print("New constants: {}, {}".format(soot_rate_constants[0],
+        print("New constants: {:3e}, {:.3f}".format(soot_rate_constants[0],
                                             soot_rate_constants[1]))
 
-        print("New integral value: {}\n".format(cost))
+        print("New integral value: {:.8f}\n".format(cost))
 
         return cost
 
@@ -66,18 +66,18 @@ class StarObjective:
         pccl_star_list = list(self.c.pc_star_mf_function(int_time))
         tt_star_list = list(int_results[0])
 
-        #cost = integrateDiff(pccl_star_list, tt_star_list)
-        cost = integrateDiff(pccl_star_list, tt_star_list)
+        cost = getSumSquares(pccl_star_list, tt_star_list)
 
-        print("New constants: {}, {}".format(cracking_rate_constants[0],
+        print("New constants: {:.3e}, {:.3f}".format(cracking_rate_constants[0],
                                             cracking_rate_constants[1]))
 
-        print("New integral value: {}\n".format(cost))
+        print("New integral value: {:.8f}\n".format(cost))
 
         return cost
 
 
 # Starting point for the constants
+# taken from Brown 1998
 A_sf = 5.02e8
 E_sf = 198.9
 A_cr = 9.77e10
@@ -89,21 +89,28 @@ soot_rate_constants = rate_constants[0:2]
 
 c = cpn.SpeciesComparison()
 
+# Again
+rate_constants = (3.676e9, 216.073, 2.789e1, 0.796)
+cracking_rate_constants = rate_constants[2:]
+soot_rate_constants = rate_constants[0:2]
 
+## Optimize the soot formation constants
 # soot_obj = SootObjective(cracking_rate_constants, c)
 # min_result = opt.minimize(soot_obj, soot_rate_constants, method='Nelder-Mead',
 #                           options={'fatol':1e-3})
 # exit()
 
 
-# New soot constants
-# rate_constants = (2.33e7, 154.7, A_cr, E_cr)
+## Using the new soot constants optimize the cracking constants
+#rate_constants = (2.3196e8, 184.455, A_cr, E_cr)
+# rate_constants = (3.676e9, 216.073, 6.496e2, 30.257)
 # star_obj = StarObjective(rate_constants, c)
 # min_result = opt.minimize(star_obj, soot_rate_constants, method='Nelder-Mead',
 #                           options={'fatol':1e-3})
 # exit()
 
-rate_constants = (2.33e7, 154.7, 1988.4, 47.31)
+
+rate_constants = (4.971576e8, 191.82, 2.789e1, 0.796)
 results = c.integrateRates(rate_constants)
 
 int_time = results[3]
@@ -121,8 +128,9 @@ plt.plot(c.stime, c.pc_star_mf_function(c.stime), '--', label="PCCL Secondary Ta
 plt.plot(c.stime, c.s_all_mf_functions["Soot"](c.stime), '-.', label="PCCL Soot")
 plt.plot(c.stime, pccl_svol_mf , ':', label="PCCL secondary volatile Gas")
 plt.legend()
+plt.xlabel("Time [s]")
+plt.ylabel("Mass fraction within 0-D reactor")
 plt.title("Rates optimized to fit PCCL predictions")
-
 
 
 plt.figure(5)
@@ -131,6 +139,7 @@ rate = lambda T,A,E: A * np.exp(-E/(0.008314 * T))
 plt.plot(temps, rate(temps,rate_constants[0], rate_constants[1]), label="soot")
 plt.plot(temps, rate(temps,rate_constants[2],rate_constants[3]), label="cracking")
 plt.legend()
+plt.title("Rates at Temperature")
 plt.show()
 
 

@@ -171,7 +171,7 @@ def formRateFunction(tar_sec, stime, stemp, A, E):
 
     r = Y_st * A * exp(-E/RT) / rho
     """
-    R = 8.315e-3 #kJ/[mol K]
+    R = 8.315e-3 #kJ/[mol K] from Brown 1998
         
     tar_list = tar_sec(stime)
     temp_list = stemp(stime)
