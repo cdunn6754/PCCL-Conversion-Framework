@@ -159,6 +159,17 @@ plt.xlabel("Time [s]")
 plt.ylabel("Mass Fraction")
 
 
+plt.figure(5)
+temps = np.arange(273,1900, 0.1)
+rate = lambda T,A,E: A * np.exp(-E/(0.008314 * T))
+plt.plot(temps, rate(temps,rate_constants[0], rate_constants[1]), label="soot")
+plt.plot(temps, rate(temps,rate_constants[2],rate_constants[3]), label="cracking")
+rate_constants = [5.02e8, 198.9, 9.77e10, 286.9]
+plt.plot(temps, rate(temps,rate_constants[0], rate_constants[1]), label="og soot")
+plt.plot(temps, rate(temps,rate_constants[2],rate_constants[3]), label="og cracking")
+plt.legend()
+
+
 plt.show()
 
 

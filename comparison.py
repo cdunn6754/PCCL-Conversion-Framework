@@ -163,8 +163,8 @@ if __name__ == "__main__":
 
 
     # Starting point for the constants
-    A_sf = 2.33e7#5.02e8
-    E_sf = 154.7#198.9
+    A_sf = 5.02e8
+    E_sf = 198.9
     A_cr = 9.77e10
     E_cr = 286.9
 
