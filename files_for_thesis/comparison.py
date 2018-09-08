@@ -163,8 +163,8 @@ if __name__ == "__main__":
 
 
     # Starting point for the constants
-    A_sf = 2.33e7#5.02e8
-    E_sf = 154.7#198.9
+    A_sf = 5.02e8
+    E_sf = 198.9
     A_cr = 9.77e10
     E_cr = 286.9
 
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     plt.plot(stime, pccl_star_mf,'--', label="PCCL secondary tar")
     plt.plot(stime, pccl_ptar_mf,'-', label="PCCL primary tar")
     plt.plot(stime, pccl_soot_mf, '-.', label="PCCL soot")
-   # plt.plot(stime, pccl_svol_mf, ':', label="PCCL secondary Volatiles")
+    plt.plot(stime, pccl_svol_mf, ':', label="PCCL secondary gases")
     plt.xlabel("Time [s]")
     plt.ylabel("Mass Fraction")
     plt.legend()    

@@ -205,7 +205,18 @@ if __name__ == "__main__":
     plt.plot(stime, pccl_star_mf,'--', label="PCCL secondary tar")
     plt.plot(stime, pccl_ptar_mf,'-', label="PCCL primary tar")
     plt.plot(stime, pccl_soot_mf, '-.', label="PCCL soot")
-   # plt.plot(stime, pccl_svol_mf, ':', label="PCCL secondary Volatiles")
+    plt.plot(stime, pccl_svol_mf, ':', label="PCCL secondary gases")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Mass Fraction")
+    plt.legend()    
+
+    ## Presentation plot
+    # tar broken down
+    pccl_tar_released = pccl_ptar_mf - pccl_star_mf
+    plt.figure(4)
+    plt.plot(stime, pccl_ptar_mf,'-', label="primary tar")
+    plt.plot(stime, pccl_star_mf,'--', label="secondary tar")
+    plt.plot(stime, pccl_tar_released,'-', label="tar released")
     plt.xlabel("Time [s]")
     plt.ylabel("Mass Fraction")
     plt.legend()    

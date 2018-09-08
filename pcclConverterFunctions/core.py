@@ -185,6 +185,7 @@ def getDataFunctions():
     # Wait until now to calculate soot because the primary and
     # secondary time series are different. Once they are functions
     # they are easier to work with.
+    # There is no wt-loss in the secondary data.
 
     secondary_functions["Soot"] = lambda t: (primary_functions["Wt Loss"](t) - 
         secondary_functions["No Soot Weight Loss"](t))
