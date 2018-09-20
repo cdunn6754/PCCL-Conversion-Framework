@@ -4,75 +4,42 @@ import matplotlib.pyplot as plt
 import scipy.interpolate as intrp
 import scipy.misc as scpmsc
 import warnings
-"""
 
 """
-
-# class interpolation():
-#     """
-#     The scipy interpolation callable objects work great but throw an 
-#     error when you call them outside of the time range. Sometimes 
-#     the scipy integrators need to make a call just slightly outside.
-#     This is a wrapper function that performs a constant extrapolation
-#     in the case that the argument is outside of the interpolation range
-#     """
-    
-#     def __init__(self, time_list, data_list, kind="cubic"):
+Functions that help read the csv files and prepare the data to be stored
+in the comparision objects. Each set of data, that is each coal type and 
+heating condition, will have two csv files that need to be read, primary and
+secondary.
+"""
         
-#         self.orig_interpolation = intrp.interp1d(time_list,
-#                                                  data_list,
-#                                                  kind=kind)
-
-#         self.top_limit = time_list[-1]
-#         self.bottom_limit = time_list[0]
-
-#     def __call__(self, t):
-        
-#         try:
-#             # first try to use the interpolation
-#             result = self.orig_interpolation(t)
-#             return result
-
-#         # If it didnt work do the constant extrapolation
-#         except ValueError as err:
-#             emessage = err.args[0]
-#             # if its above the interpolated range
-#             if emessage == "A value in x_new is above the interpolation range.":
-
-#                 warning_string = ("Value {} above the interpolation ".format(t) + 
-#                                   "range limit of {}".format(self.top_limit))
-#                 warnings.warn(warning_string)
-                
-#                 print(self.top_limit)
-#                 result = self.orig_interpolation(self.top_limit)
-#                 return result
-                        
-
-#             elif emessage == "A value in x_new is below the interpolation range.":
-                
-#                 warning_string = ("Value {} below the interpolation ".format(t) + 
-#                                   "range limit of {}".format(self.bottom_limit))
-#                 warnings.warn(warning_string)
-
-#                 result = self.orig_interpolation(self.bottom_limit)
-#                 return result
-        
-# Function to clean the "0.1" and spaces from the column names
 def cleanColumns(name):
+    """
+    Clean the "0.1" and spaces from the column names
+    """
     if name[-1] == "1":
         name = name[0:-2]
 
     name = name.strip()
     return name
 
-# Function to increase the resolution by linear interpolation
 def increaseResolution(data):
+    """
+    Increase the resolution by linear interpolation
+    """
     n = len(data)
     x = np.arange(0, 2*n, 2)
     x1 = np.arange(0,2*n -1 ,1)
     return  np.interp(x1, x, data)
 
 def readCSV():
+    """
+    Uses pandas to read the csv files, performs some minor
+    modifications and returns a tuple of data frames
+    (primary data frame, secondary data frame)
+
+    At this point all mass fractions are still 
+    particle daf mass fractions.
+    """
 
     pfile = 'PCCL_inputs/UtahHiawatha/primary.csv'
     sfile = 'PCCL_inputs/UtahHiawatha/secondary.csv'
@@ -95,8 +62,8 @@ def readCSV():
     pccl_primary_df["T"] += 273.15
     pccl_secondary_df["T"] += 273.15
 
-    # Add a nitrogen column, assume the fraction is some fraction of the 
-    # particel daf initial mass
+    # Add a nitrogen column, assume the fraction is 50% of the 
+    # particle daf initial mass
     pccl_primary_df = pccl_primary_df.assign(N2 = [50.0] * len(pccl_primary_df["T"]))
     pccl_secondary_df = pccl_secondary_df.assign(N2 = [50.0] * len(pccl_secondary_df["T"]))
 
@@ -104,9 +71,11 @@ def readCSV():
 
 def functionsFromTimeSeriesDf(df):
     """
-    Takes the read in apandas df from csv and cubicly interpolates the 
+    Takes the read in a pandas df from csv and cubicly interpolates the 
     time series. Returns a dictionary. The dictionary 
     values are a time series function, the key is the column/species name.
+
+    The time element is an exception, it is stored as a list.
     """
 
     # Initialize the dictionaries
@@ -158,11 +127,12 @@ def functionFromArray(time, data, new_time=None):
         
     return function
 
+
 def getDataFunctions():
     """ 
     Grabs data frames from csv for both prim and sec fields.
     Uses functionsFromTimeSeiesDf() fcn to find the 
-    corresponding funcitons for each.
+    corresponding functions for each.
     """
     
     # Read CSVS
@@ -195,10 +165,10 @@ def getDataFunctions():
 
 def calcTimeDerivative(function, times, dx=1e-6):
     """
-    given function which is a python function
-    that acts as a 1-d math function of time, calculate derivative.
+    given a python function, 'function',
+    that acts as a 1-d scalar math function of time, calculate derivative.
     times is a list or numpy array of time that corresponds to the function.
-    Central differnce is used and the spacing is specified by dx
+    Central difference is used and the spacing is specified by dx
     """
 
     # list of derivative value at each timestep
@@ -249,7 +219,6 @@ def calcTimeDerivative(function, times, dx=1e-6):
                                     fill_value="extrapolate")
                 
     return deriv_function
-
 
     
 if __name__ == "__main__":
