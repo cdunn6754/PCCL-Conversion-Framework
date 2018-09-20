@@ -7,10 +7,10 @@ import cantera as ct
 
 
 """
-This module uses the time series from core to determine the 
+This module uses the particle yield mass fraction time series from core to determine the 
 mass fractions of each species as a time series.
 For now the species considered, whether they are primary or secondary, 
-are hard-coded. 
+are hard-coded.
 """
 
 species_considered = ['Tar', 'CO2', 'H2O', 'CO', 'HCN', 'CH4', 'C2H4', 'Soot',
@@ -18,7 +18,7 @@ species_considered = ['Tar', 'CO2', 'H2O', 'CO', 'HCN', 'CH4', 'C2H4', 'Soot',
 
 def getTarMassFractionFunctions(functions, times):
     """
-     The functions are yield daf we need to convert to 
+    The functions are yield daf we need to convert to 
     find the tar mass fraction of each species in the enviroment
     surrounding the particle. To do this add up all daf yield 
     fractions of  volatile species including Tar from the
@@ -26,7 +26,7 @@ def getTarMassFractionFunctions(functions, times):
 
     Returns the tar mass fraction function for the pccl run 
     within the idealized 0-D reactor around the particle
-    as a scipy interpolation object.
+    as a scipy interpolation object (i.e. a function).
     """
 
     # list of sums to be used for renormalization
