@@ -75,17 +75,20 @@ There are four main python files that drive everything.
 
 
 * pcclConverterFunctions.core
+	
 	This module provides functions that are involved in reading the PCCL
 	output csv files
 
 * pcclConverterFunctions.chemistry
+	
 	This module is poorly named. I though at first that we would need to do some
 	chemistry calculations to determine the density of the mixtures but that
 	became unnecessary. Instead this module contains functions to convert those
 	PCCL yield fractions into the mixture mass fractions that we need.
 
 * comparison.py
-  Contains a monolithic class, `SpeciesComparison`
+ 	
+	Contains a monolithic class, `SpeciesComparison`
 	that tracks the time series of both PCCL secondary
 	and primary information as well as the result of the integration
 	of the CFD rates. It has functionality to integrate the CFD rates
@@ -94,7 +97,8 @@ There are four main python files that drive everything.
 	of the above modules.
 
 * optimize.py
-  Creates a `SpeciesComparison` instance that to hold the PCCL data and
+  	
+	Creates a `SpeciesComparison` instance that to hold the PCCL data and
 	provide a way to integrate the rates. It then optimizes rate constants until
 	the CFD model predictions match PCCL. There are two cost function functions
 	that are used in the optimization and two 'optimizer' classes that are
